@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+* {
+  box-sizing: border-box;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  color: #111111;
+}
+
+
+.landing-page {
+
+  /* 100 % of the browse window height */
+  min-height: 100vh;
+
+  /* Needed when we position stars around the page */
+  position: relative;
+
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: /* gradient like background */
+    radial-gradient(
+      circle at center,
+      #11182b 0%,
+      #0b1020 35%,
+      #070a12 70%
+    );
+}
+
+
+.landing-page h1 {
+  margin: 0;
+
+  font-size: 64px;
+  font-weight: 500;
+
+  letter-spacing: 8px;
+
+  color: #f5f3ee;
 }
