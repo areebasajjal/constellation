@@ -10,7 +10,8 @@ export default function Home() {
   // releasedText holds the thought AFTER the user clicks "release it".
   // This is separate from text so we can clear the textarea
   // without losing the thought that was already released.
-  const [releasedText, setReleasedText] = useState("");
+  const [releasedTexts, setReleasedText] = useState<string[]>([]); // an array of strings to hold multiple released thoughts
+  // starts empthy tho.
 
 
   function handleTextChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -27,7 +28,7 @@ export default function Home() {
     // Example:
     // text = "I feel lonely"
     // releasedText = "I feel lonely"
-    setReleasedText(text);
+    setReleasedText([...releasedTexts, text]); // Adding the new thought to the array of released thoughts.
 
     // Clear ONLY the typing state.
     // Because the textarea uses value={text}, this clears the textarea.
@@ -50,15 +51,14 @@ export default function Home() {
         release it
       </button>
 
-      {releasedText && (
-        <div>
-          <p>✦</p>
-
           {/* Display the thought that was released. */}
-          
-          <p>{releasedText}</p>
-        </div>
-      )}
+
+          {releasedTexts.map((releasedText, index) => (
+            <div key={index}>
+             <p>✦</p> 
+             <p> {releasedText} </p> 
+        </div> 
+          ))}
     </main>
   );
 }
