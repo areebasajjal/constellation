@@ -35,7 +35,7 @@ export default function LandingPage() {
         </h2>
 
 
-        <Link href="/constellation" className="hero-button">
+        <Link href="/Constellationspace" className="hero-button">
           Enter the constellation
 
           <span className="hero-button-arrow">
