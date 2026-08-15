@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-* {
+*{
   box-sizing: border-box;
 }
 
@@ -19,83 +19,274 @@ body {
 
 .landing-page {
 
-  /* 100 % of the browse window height */
   min-height: 100vh;
-
-  /* Needed when we position stars around the page */
   position: relative;
-
   overflow: hidden;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  background: /* gradient like background */
-    radial-gradient(
+  padding: 40px;
+
+  background:
+     radial-gradient(
       circle at center,
-      #11182b 0%,
-      #0b1020 35%,
-      #070a12 70%
+      rgba(61, 77, 125, 0.28) 0%,
+      rgba(17, 24, 43, 0.18) 28%,
+      rgba(7, 10, 18, 0) 55%
+    ),
+
+    linear-gradient(
+      180deg,
+      #0b1020 0%,
+      #070a12 55%,
+      #05070d 100%
     );
-}
-
-.landing-page h1 {
-  margin: 0;
-
-  font-size: 64px;
-  font-weight: 500;
-
-  letter-spacing: 8px;
 
   color: #f5f3ee;
 }
 
-.star1,
-.star2,
-.star3,
-.star4,
-.star5,
-.star6 {
+
+.landing-page::before {
+  content: "";
+
   position: absolute;
 
-  width: 6px;
-  height: 6px;
+  width: 520px;
+  height: 520px;
 
-  background: #fff2c7;
   border-radius: 50%;
 
+  background: rgba(116, 133, 188, 0.08);
+
+  filter: blur(90px);
+
+  top: 50%;
+  left: 50%;
+
+  transform: translate(-50%, -50%);
+}
+
+.landing-page::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.45) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255,255,255,0.22) 1px, transparent 1px);
+
+  background-size:
+    90px 90px,
+    140px 140px;
+
+  background-position:
+    20px 30px,
+    60px 80px;
+
+  opacity: 0.35;
+} 
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+
+  width: min(760px, 92%);
+
+  text-align: center;
+}
+
+/* small star above title */
+.hero-symbol {
+  margin-bottom: 22px;
+
+  font-size: 28px;
+
+  color: #fff1c7;
+
+  text-shadow:
+    0 0 12px rgba(255, 241, 199, 0.75),
+    0 0 30px rgba(255, 241, 199, 0.3);
+}
+
+/* shared signal. human connection */
+.hero-kicker {
+  margin-bottom: 18px;
+
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  font-family: Arial, Helvetica, sans-serif;
+
+  text-transform: uppercase;
+
+  color: #8d97ad;
+}
+
+/* main title constellation */
+.landing-page h1 {
+  margin: 0;
+
+  font-size: clamp(48px, 8vw, 92px);
+  font-weight: 500;
+  font-family: beckan;
+
+  letter-spacing: 0.14em;
+
+  color: #f7efd8;
+
+  line-height: 0.95;
+}
+
+/* see what your comm... */
+.hero-title {
+  margin-top: 28px;
+
+  font-size: clamp(24px, 3.2vw, 38px);
+  font-weight: 300;
+  font-family: sarina;
+
+  line-height: 1.3;
+
+  letter-spacing: -0.015em;
+
+  color: #cfd3dc;
+
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* main button */
+.hero-button {
+  margin-top: 35px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 14px 24px;
+
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.06);
+
+  color: #f5f3ee;
+
+  font-size: 15px;
+
+  text-decoration: none;
+
+  backdrop-filter: blur(14px);
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.hero-button:hover {
+  transform: translateY(-2px);
+
+  background: rgba(255, 255, 255, 0.1);
+
+  border-color: rgba(255, 241, 199, 0.35);
+}
+
+.hero-button-arrow {
+  color: #fff1c7;
+
+  transition: transform 0.25s ease;
+}
+
+.hero-button:hover .hero-button-arrow {
+   transform: translateX(4px); 
+  /* arrow moves to the right */
+}
+
+
+/* shiny stars */
+.star {
+  position: absolute;
+
+  width: 5px;
+  height: 5px;
+
+  border-radius: 50%;
+
+  background: #f6f2df;
+
   box-shadow:
-    0 0 8px rgba(255, 242, 199, 0.7),
-    0 0 20px rgba(255, 242, 199, 0.25);
+    0 0 8px rgba(246, 242, 223, 0.7),
+    0 0 18px rgba(246, 242, 223, 0.25);
+
+  z-index: 1;
 }
 
-.star1 {
-  top: 20%;
-  left: 15%;
+.star-1 {
+  top: 18%;
+  left: 14%;
 }
 
-.star2 {
-  top: 38%;
-  left: 27%;
+.star-2 {
+  top: 28%;
+  right: 16%;
 }
 
-.star3 {
-  top: 24%;
-  right: 17%;
+.star-3 {
+  bottom: 24%;
+  left: 18%;
 }
 
-.star4 {
-  bottom: 22%;
-  left: 20%;
-}
-
-.star5 {
+.star-4 {
   bottom: 18%;
-  right: 26%;
+  right: 20%;
 }
 
-.star6 {
+.star-5 {
+  top: 52%;
+  left: 8%;
+}
+
+.star-6 {
   top: 58%;
   right: 12%;
+}
+
+.star-7 {
+  top: 12%;
+  left: 44%;
+}
+
+.star-8 {
+  bottom: 12%;
+  right: 44%;
+}
+
+.star-bright {
+  width: 8px;
+  height: 8px;
+
+  box-shadow:
+    0 0 12px rgba(255, 241, 199, 0.9),
+    0 0 28px rgba(255, 241, 199, 0.35);
+}
+
+
+/* for mob */
+@media (max-width: 700px) {
+  .landing-page {
+    padding: 24px;
+  }
+
+  .landing-page h1 {
+    letter-spacing: 0.08em;
+  }
+
+  .star-5,
+  .star-6 {
+    display: none;
+  }
 }
