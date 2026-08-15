@@ -40,7 +40,6 @@ body {
     );
 }
 
-
 .landing-page h1 {
   margin: 0;
 
@@ -50,4 +49,53 @@ body {
   letter-spacing: 8px;
 
   color: #f5f3ee;
+}
+
+.star1,
+.star2,
+.star3,
+.star4,
+.star5,
+.star6 {
+  position: absolute;
+
+  width: 6px;
+  height: 6px;
+
+  background: #fff2c7;
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 8px rgba(255, 242, 199, 0.7),
+    0 0 20px rgba(255, 242, 199, 0.25);
+}
+
+.star1 {
+  top: 20%;
+  left: 15%;
+}
+
+.star2 {
+  top: 38%;
+  left: 27%;
+}
+
+.star3 {
+  top: 24%;
+  right: 17%;
+}
+
+.star4 {
+  bottom: 22%;
+  left: 20%;
+}
+
+.star5 {
+  bottom: 18%;
+  right: 26%;
+}
+
+.star6 {
+  top: 58%;
+  right: 12%;
 }
