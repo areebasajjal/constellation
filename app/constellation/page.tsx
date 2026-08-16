@@ -543,8 +543,7 @@ async function handleRelease() {
 
 
 
-  // Immediately show this star
-  // in the current browser.
+  // Immediately show this star in the current browser.
   setStars((currentStars) => {
 
     if (currentStars.includes(starId)) {
@@ -612,75 +611,120 @@ async function handleSendInvitation() {
 }
 
   // The receiver sees this card before the normal match screen.
-  if (incomingInvitation && starId) {
-    return (
-      <main className="match-screen">
-        <section className="match-card">
-          <p className="match-label">
-            A SMALL INVITATION
-          </p>
+if (incomingInvitation && starId) {
+  return (
+    <main className="match-screen">
 
-          <div className="match-star-pair">
-            <div className="match-star-id">
-              <span>✦</span>
-              <p>{incomingInvitation.senderStarId}</p>
-            </div>
+      <section className="receiver-invitation-card">
 
-            <div className="match-pair-symbol">→</div>
+        <span
+          className="
+            receiver-decoration
+            receiver-decoration-one
+          "
+        >
+          ✦
+        </span>
 
-            <div className="match-star-id">
-              <span>✦</span>
-              <p>{starId}</p>
-            </div>
+        <span
+          className="
+            receiver-decoration
+            receiver-decoration-two
+          "
+        >
+          ✧
+        </span>
+
+        <span
+          className="
+            receiver-decoration
+            receiver-decoration-three
+          "
+        >
+          ⋆
+        </span>
+
+        <p className="receiver-kicker">
+          A SMALL INVITATION
+        </p>
+
+        <div className="receiver-star-pair">
+
+          <div className="receiver-star">
+            <span>✦</span>
+
+            <p>
+              {incomingInvitation.senderStarId}
+            </p>
           </div>
 
-          <section className="activity-confirmation">
-            <p className="activity-kicker">
-              YOU HAVE BEEN INVITED TO
-            </p>
+          <div className="receiver-arrow">
+            →
+          </div>
 
-            <div className="selected-activity-icon">✦</div>
+          <div className="receiver-star">
+            <span>✦</span>
 
-            <h2>{incomingInvitation.activity}</h2>
+            <p>{starId}</p>
+          </div>
 
-            <p className="activity-description">
-              {incomingInvitation.senderStarId} would like to share
-              this low-pressure activity with you. Would you be
-              interested?
-            </p>
+        </div>
 
-            <div className="confirmation-buttons">
-              <button
-                className="send-invitation-button"
-                onClick={() => {
-                  // We will save this answer in the next step.
-                  console.log(
-                    "Accept invitation:",
-                    incomingInvitation.id
-                  );
-                }}
-              >
-                Yes, I&apos;m interested
-              </button>
+        <section className="received-activity">
 
-              <button
-                className="back-button"
-                onClick={() => {
-                  // We will save this answer in the next step.
-                  console.log(
-                    "Decline invitation:",
-                    incomingInvitation.id
-                  );
-                }}
-              >
-                Not right now
-              </button>
-            </div>
-          </section>
+          <p className="received-activity-label">
+            YOU HAVE BEEN INVITED TO
+          </p>
+
+          <div className="received-activity-icon">
+            ✦
+          </div>
+
+          <h2>
+            {incomingInvitation.activity}
+          </h2>
+
+          <p className="received-activity-message">
+            {incomingInvitation.senderStarId} would
+            like to share this low-pressure activity
+            with you. Would you be interested?
+          </p>
+
+          <div className="receiver-buttons">
+
+            <button
+              className="accept-invitation-button"
+              onClick={() => {
+                console.log(
+                  "Accept invitation:",
+                  incomingInvitation.id
+                );
+              }}
+            >
+              Yes, I&apos;m interested ✦
+            </button>
+
+            <button
+              className="decline-invitation-button"
+              onClick={() => {
+                console.log(
+                  "Decline invitation:",
+                  incomingInvitation.id
+                );
+              }}
+            >
+              Not right now
+            </button>
+
+          </div>
+
         </section>
-      </main>
-    );
-  }
+
+      </section>
+
+    </main>
+  );
+}
 
   if (matchedStar && starId) {
     return (
