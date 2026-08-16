@@ -144,8 +144,7 @@ export default function SpacesPage() {
 
             {createdSpace && (
                 <div>
-                    <p> Space created: {createdSpace} </p>
-           <p> Space code: {spaceCode} </p>
+           <p> C O D E : {spaceCode} </p>
   </div>
 )}
 
