@@ -279,6 +279,25 @@ body {
   left: 44%;
 }
 
+.star-88 {
+  top: 9%;
+  left: 70%;
+}
+
+.star-99 {
+  top: 6%;
+  left: 10%;
+}
+
+.star-00 {
+  top: 6%;
+  left: 89%;
+}
+
+.star-11 {
+  top: 25%;
+  left: 14%;
+}
 
 /* for mob */
 @media (max-width: 700px) {
