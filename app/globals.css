@@ -306,21 +306,22 @@ body {
 
 @media (max-width: 700px) {
   .landing-page {
-    padding: 24px 18px;
+    padding: 24px 14px;
   }
 
   .landing-page h1 {
-    font-size: clamp(30px, 11vw, 68px);
+    font-size: clamp(30px, 9.5vw, 48px);
 
-    letter-spacing: 0.05em;
+    letter-spacing: 0.025em;
 
     width: 100%;
+    max-width: 100%;
 
     text-align: center;
 
+    white-space: nowrap;
   }
 }
-
 /* SPACE SELECTION PAGE */
 
 .space-page {
