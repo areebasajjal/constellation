@@ -304,19 +304,22 @@ body {
   left: 14%;
 }
 
-/* for mob */
 @media (max-width: 700px) {
+
   .landing-page {
-    padding: 24px;
+    padding: 24px 18px;
   }
 
   .landing-page h1 {
-    letter-spacing: 0.08em;
-  }
+    font-size: clamp(38px, 11vw, 54px);
 
-  .star-5,
-  .star-6 {
-    display: none;
+    letter-spacing: 0.05em;
+
+    width: 100%;
+
+    text-align: center;
+
+    transform: none;
   }
 }
 
