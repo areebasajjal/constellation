@@ -1246,3 +1246,87 @@ body {
     gap: 20px;
   }
 }
+/* Activity Section */
+.activity-section {
+  margin-top: 34px;
+  padding-top: 30px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.activity-kicker {
+  margin: 0 0 14px;
+
+  color: #8d98ad;
+
+  font-size: 10px;
+  letter-spacing: 0.25em;
+}
+
+.activity-section h2 {
+  margin: 0;
+
+  color: #f7efd8;
+
+  font-size: 25px;
+  font-weight: 500;
+  font-family: beckan;
+}
+
+.activity-description {
+  max-width: 430px;
+
+  margin: 14px auto 24px;
+
+  color: #9da6b7;
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.activity-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 12px;
+}
+
+.activity-options button {
+  min-height: 58px;
+
+  padding: 12px 16px;
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.045);
+
+  color: #c9cfdb;
+
+  font-size: 15px;
+  font-family: sarina;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.activity-options button:hover {
+  transform: translateY(-2px);
+
+  border-color: rgba(247, 239, 216, 0.25);
+
+  background: rgba(247, 239, 216, 0.09);
+
+  color: #f7efd8;
+}
+
+@media (max-width: 600px) {
+  .activity-options {
+    grid-template-columns: 1fr;
+  }
+}
