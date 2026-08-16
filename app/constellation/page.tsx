@@ -1,64 +1,167 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 
 export default function ConstellationHome() {
-  // text holds whatever the user is presently typing.
-  // setText is how we update or clear that value.
+
+  // Reads values from the URL.
+  const searchParams = useSearchParams();
+
+  // Example URL:
+  // /constellation?space=AAA345&star=CT-583
+  const spaceCode = searchParams.get("space");
+
+
   const [text, setText] = useState("");
 
-  // releasedText holds the thought AFTER the user clicks "release it".
-  // This is separate from text so we can clear the textarea
-  // without losing the thought that was already released.
-  const [releasedTexts, setReleasedText] = useState<string[]>([]); // an array of strings to hold multiple released thoughts
-  // starts empthy tho.
+
+  const [releasedTexts, setReleasedTexts] = useState<string[]>([]);
 
 
-  function handleTextChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+  const [spaceName, setSpaceName] = useState("");
+
+
+  useEffect(() => {
+
+    async function getSpaceName() {
+
+      if (!spaceCode) {
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("spaces")
+        .select("name")
+        .eq("code", spaceCode)
+        .maybeSingle();
+
+
+      if (error) {
+        console.log("Error getting space name:");
+        console.log(error);
+        return;
+      }
+
+      if (data) {
+        setSpaceName(data.name);
+      }
+    }
+
+
+    getSpaceName();
+
+  }, [spaceCode]);
+
+
+  function handleTextChange(
+    event: React.ChangeEvent<HTMLTextAreaElement>
+  ) {
     const newText = event.target.value;
+
     setText(newText);
   }
 
   function handleRelease() {
+
     if (text.trim() === "") {
       return;
     }
 
-    // Copy the current typed text into releasedText.
-    // Example:
-    // text = "I feel lonely"
-    // releasedText = "I feel lonely"
-    setReleasedText([...releasedTexts, text]); // Adding the new thought to the array of released thoughts.
+    setReleasedTexts([...releasedTexts, text]);
 
-    // Clear ONLY the typing state.
-    // Because the textarea uses value={text}, this clears the textarea.
     setText("");
   }
 
+
   return (
-    <main>
-      <h1>Constellation</h1>
-      <p>See what your community shares.</p>
+    <main className="constellation-home">
 
-      <textarea
-        // The textarea always displays whatever is stored in `text`.
-        value={text}
-        onChange={handleTextChange}
-        placeholder="What's something you're carrying right now?"
-      />
+      <section className="thought-section">
 
-      <button onClick={handleRelease}>
-        release it
-      </button>
+        <div className="thought-symbol">
+          ✦
+        </div>
 
-          {/* Display the thought that was released. */}
+        <p className="thought-kicker">
+          welcome to {spaceName}
+        </p>
 
-          {releasedTexts.map((releasedText, index) => (
-            <div key={index}>
-             <p>✦</p> 
-             <p> {releasedText} </p> 
-        </div> 
-          ))}
+
+        <h1>
+          What are you carrying?
+        </h1>
+
+
+        <p className="thought-description">
+          You don&apos;t need to name an emotion.
+          Just say what feels true right now.
+        </p>
+
+
+        <textarea
+          value={text}
+          onChange={handleTextChange}
+          placeholder="Everyone here already seems to know someone..."
+          maxLength={180}
+        />
+
+
+        <div className="thought-footer">
+
+          <span>
+            {text.length}/180
+          </span>
+
+
+          <button onClick={handleRelease}>
+            Release it
+            <span>✦</span>
+          </button>
+
+        </div>
+
+      </section>
+
+
+      {releasedTexts.length > 0 && (
+
+        <section className="released-section">
+
+          <p className="released-label">
+            RELEASED SIGNALS
+          </p>
+
+
+          <div className="released-stars">
+
+            {releasedTexts.map((releasedText, index) => (
+
+              <div
+                className="released-star"
+                key={index}
+              >
+
+                <div className="released-star-symbol">
+                  ✦
+                </div>
+
+
+                <p>
+                  {releasedText}
+                </p>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        </section>
+
+      )}
+
     </main>
   );
 }
