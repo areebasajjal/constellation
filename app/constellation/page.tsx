@@ -6,39 +6,33 @@ import { supabase } from "../../lib/supabase";
 
 export default function ConstellationHome() {
 
-  // Reads values from the URL.
+  // Read values from the URL.
   const searchParams = useSearchParams();
 
-  // Example:
   // /constellation?space=AAA345&star=CT-583
   const spaceCode = searchParams.get("space");
   const starId = searchParams.get("star");
 
 
-  // What the user is currently typing.
   const [text, setText] = useState("");
 
-
-  // Stores the real space name.
   const [spaceName, setSpaceName] = useState("");
 
 
-  // Stores only visible stars.
-  // These are participants who already
-  // released at least one thought.
+  // Stores only the stars that have actuallyreleased at least one thought.
   const [stars, setStars] = useState<string[]>([]);
 
 
-  // Error message for thought release.
+  // Shows an error if something goes wrong
   const [releaseError, setReleaseError] = useState("");
 
 
-  // Used while Supabase is saving.
+  // Used while Supabase is saving the thought.
   const [releasing, setReleasing] = useState(false);
 
 
 
-  // Load the space name and visible stars.
+  // Load the space name and visible stars
   useEffect(() => {
 
     async function loadSpaceData() {
@@ -58,20 +52,16 @@ export default function ConstellationHome() {
 
 
       if (spaceError || !spaceData) {
-
         console.log("Error loading space:");
         console.log(spaceError);
 
         return;
       }
 
-
-      // Show the actual space name.
       setSpaceName(spaceData.name);
 
 
-      // Only load participants who
-      // have already released a thought.
+      // Only fetch stars from participants who have already released a thought.
       const { data: participantData, error: participantError } =
         await supabase
           .from("participants")
@@ -81,7 +71,6 @@ export default function ConstellationHome() {
 
 
       if (participantError) {
-
         console.log("Error loading stars:");
         console.log(participantError);
 
@@ -89,8 +78,8 @@ export default function ConstellationHome() {
       }
 
 
-      // Convert returned participant rows
-      // into a simple array of Star IDs.
+      // Turn the returned rows into a simple array like:
+
       const starIds = participantData.map(
         (participant) => participant.star_id
       );
@@ -105,8 +94,42 @@ export default function ConstellationHome() {
   }, [spaceCode]);
 
 
+  useEffect(() => {
 
-  // Runs whenever the textarea changes.
+    if (!spaceCode) {
+      return;
+    }
+
+
+    const channel = supabase
+      .channel(`participant-updates-${spaceCode}`)
+
+      .on("postgres_changes",{
+          // We only care when has_released changes from false to true.
+          event: "UPDATE",
+
+          schema: "public",
+
+          table: "participants"
+        },
+
+        () => {// when someone releases a thought, reload the page so the latest stars appear.
+          window.location.reload();
+        }
+      )
+
+      .subscribe();
+
+
+    // Stop listening when the user leaves this page.
+    return () => {
+      supabase.removeChannel(channel);
+    };
+
+  }, [spaceCode]);
+
+
+
   function handleTextChange(
     event: React.ChangeEvent<HTMLTextAreaElement>
   ) {
@@ -117,11 +140,9 @@ export default function ConstellationHome() {
   }
 
 
-
-  // Runs when the user clicks Release it.
   async function handleRelease() {
 
-    // Don't save an empty thought.
+
     if (text.trim() === "") {
       return;
     }
@@ -141,7 +162,8 @@ export default function ConstellationHome() {
     setReleaseError("");
 
 
-    // Find the space UUID.
+
+    // Find the UUID 
     const { data: spaceData, error: spaceError } =
       await supabase
         .from("spaces")
@@ -164,9 +186,6 @@ export default function ConstellationHome() {
       return;
     }
 
-
-
-    // Find this person's participant row.
     const { data: participantData, error: participantError } =
       await supabase
         .from("participants")
@@ -191,8 +210,6 @@ export default function ConstellationHome() {
     }
 
 
-
-    // Permanently save the private thought.
     const { error: thoughtError } = await supabase
       .from("thoughts")
       .insert({
@@ -218,9 +235,7 @@ export default function ConstellationHome() {
 
 
 
-    // The participant has now released
-    // at least one thought, so make
-    // their star visible.
+    // Mark this participant as visible  in the constellation.
     const { error: updateError } = await supabase
       .from("participants")
       .update({
@@ -245,11 +260,11 @@ export default function ConstellationHome() {
 
 
 
-    // Immediately add the current Star ID
-    // to this browser's constellation.
+    // Immediately show this star
+    // in the current browser.
     setStars((currentStars) => {
 
-      // Don't show the same star twice.
+      // Don't add the same star twice.
       if (currentStars.includes(starId)) {
         return currentStars;
       }
@@ -258,7 +273,7 @@ export default function ConstellationHome() {
     });
 
 
-    // Clear the private thought from the textarea.
+    // Clear the textarea.
     setText("");
 
     setReleasing(false);
@@ -311,15 +326,10 @@ export default function ConstellationHome() {
             onClick={handleRelease}
             disabled={releasing}
           >
-            {releasing
-              ? "Releasing..."
-              : "Release it"}
 
-            <span>
-              ✦
-            </span>
+            {releasing? "Releasing..." : "Release it"}
+            <span> ✦ </span>
           </button>
-
         </div>
 
 
@@ -331,10 +341,6 @@ export default function ConstellationHome() {
 
       </section>
 
-
-
-      {/* Only people who released a thought
-          appear in the constellation. */}
       {stars.length > 0 && (
 
         <section className="released-section">
@@ -374,4 +380,4 @@ export default function ConstellationHome() {
 
     </main>
   );
-} 
+}
