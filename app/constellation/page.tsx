@@ -465,12 +465,12 @@ async function handleRelease() {
     </p>
 
     <div className="activity-options">
-      <button>Take a 10-minute walk</button>
-      <button>Grab coffee or tea</button>
-      <button>Sit somewhere quiet</button>
-      <button>Attend the next session together</button>
-      <button>Try a short grounding exercise</button>
-      <button>listen to music together</button>
+      <button>🌿 Take a 10-minute walk</button>
+      <button>☕️ Grab coffee or tea</button>
+      <button>🧘 Sit somewhere quiet</button>
+      <button>🎟️ Attend the next session together</button>
+      <button>🧘 Try a short grounding exercise</button>
+      <button>🎵 listen to music together</button>
     </div>
 
   </section>
