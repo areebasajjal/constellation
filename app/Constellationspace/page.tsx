@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "../../lib/supabase";
 
 export default function SpacesPage() {
 
@@ -35,19 +36,27 @@ export default function SpacesPage() {
   return shortName + randomNumber;
 }
 
-// fuction to handle the creation of a new space when the user clicks the "Create space" button.
-  function handleCreateSpace() {
-       if (spaceName.trim() === "") {
-           return;
-    }
+  async function handleCreateSpace() { // async func cuz it might take time to respond from the database
 
-    const newCode = generateSpaceCode(spaceName);
-
-    setCreatedSpace(spaceName);
-    setSpaceCode(newCode);
-
-    setSpaceName("");
+  if (spaceName.trim() === "") {
+    return;
   }
+
+  // Generate the join code
+  const newCode = generateSpaceCode(spaceName);
+
+  const { error } = await supabase.from("spaces").insert({name: spaceName, code: newCode});
+
+  if (error) {
+    console.log("Error creating space:", error);
+    return;
+  }
+
+  setCreatedSpace(spaceName);
+  setSpaceCode(newCode);
+
+  setSpaceName("");
+}
 
 
    function handleJoinCodeChange(event: React.ChangeEvent<HTMLInputElement>) {
