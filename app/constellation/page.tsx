@@ -38,11 +38,7 @@ function ConstellationContent() {
       setSpaceName(spaceData.name);
 
       const { data: participantData, error: participantError } =
-        await supabase
-          .from("participants")
-          .select("star_id")
-          .eq("space_id", spaceData.id)
-          .eq("has_released", true);
+        await supabase.from("participants").select("star_id").eq("space_id", spaceData.id).eq("has_released", true);
 
       if (participantError) {
         console.log("Error loading stars:");
@@ -85,100 +81,170 @@ function ConstellationContent() {
     };
   }, [spaceCode]);
 
-  function handleTextChange(
-    event: React.ChangeEvent<HTMLTextAreaElement>
-  ) {
-    setText(event.target.value);
+
+// test change saviour
+  function handleTextChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+      setText(event.target.value);
   }
 
-  async function handleRelease() {
-    if (text.trim() === "") {
-      return;
-    }
+// handle release click option
+async function handleRelease() {
+  if (text.trim() === "") {
+    return;
+  }
 
-    if (!spaceCode || !starId) {
-      setReleaseError(
-        "Your space or Star ID is missing."
-      );
-      return;
-    }
 
-    setReleasing(true);
-    setReleaseError("");
+  // 2. Make sure we know which spaceand which anonymous star this belongs to
+  if (!spaceCode || !starId) {
+    setReleaseError(
+      "Your space or Star ID is missing."
+    );
 
-    const { data: spaceData, error: spaceError } =
-      await supabase
-        .from("spaces")
-        .select("id")
-        .eq("code", spaceCode)
-        .maybeSingle();
+    return;
+  }
 
-    if (spaceError || !spaceData) {
-      setReleaseError(
-        "Could not find your space."
-      );
-      setReleasing(false);
-      return;
-    }
 
-    const { data: participantData, error: participantError } =
-      await supabase
-        .from("participants")
-        .select("id")
-        .eq("space_id", spaceData.id)
-        .eq("star_id", starId)
-        .maybeSingle();
+  // Disable the button while everything is saving
+  setReleasing(true);
 
-    if (participantError || !participantData) {
-      setReleaseError(
-        "Could not find your Star ID."
-      );
-      setReleasing(false);
-      return;
-    }
+  setReleaseError("");
 
-    const { error: thoughtError } = await supabase
-      .from("thoughts")
-      .insert({
-        space_id: spaceData.id,
-        participant_id: participantData.id,
-        text: text.trim()
-      });
 
-    if (thoughtError) {
-      setReleaseError(
-        "Your thought could not be released."
-      );
-      setReleasing(false);
-      return;
-    }
+  // 3. Find the database UUID for this space
+  const { data: spaceData, error: spaceError } =
+    await supabase
+      .from("spaces")
+      .select("id")
+      .eq("code", spaceCode)
+      .maybeSingle();
 
-    const { error: updateError } = await supabase
+
+  if (spaceError || !spaceData) {
+    setReleaseError(
+      "Could not find your space."
+    );
+
+    setReleasing(false);
+
+    return;
+  }
+
+
+  // 4. Find this participant inside the space
+  const { data: participantData, error: participantError } =
+    await supabase
       .from("participants")
-      .update({
-        has_released: true
-      })
-      .eq("id", participantData.id);
+      .select("id")
+      .eq("space_id", spaceData.id)
+      .eq("star_id", starId)
+      .maybeSingle();
 
-    if (updateError) {
-      setReleaseError(
-        "Your thought was saved, but your star could not be displayed."
-      );
-      setReleasing(false);
-      return;
-    }
 
-    setStars((currentStars) => {
-      if (currentStars.includes(starId)) {
-        return currentStars;
-      }
+  if (participantError || !participantData) {
+    setReleaseError(
+      "Could not find your Star ID."
+    );
 
-      return [...currentStars, starId];
+    setReleasing(false);
+
+    return;
+  }
+
+
+  // 5. Send the private thought to our own API route. oute.ts then talks to rOpenAI and creates the embedding.
+  const embeddingResponse = await fetch("/api/embed", {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify({
+      text: text.trim()
+    })
+  });
+
+
+
+  if (!embeddingResponse.ok) {
+    setReleaseError(
+      "Your thought could not be processed."
+    );
+
+    setReleasing(false);
+
+    return;
+  }
+
+
+  // 6. Read the embedding returned by route.ts
+  const embeddingData = await embeddingResponse.json();
+
+  const embedding = embeddingData.embedding;
+
+
+  // 7. Permanently save the private thought, its embedding in Supabase
+  const { error: thoughtError } = await supabase
+    .from("thoughts")
+    .insert({
+      space_id: spaceData.id,
+      participant_id: participantData.id,
+      text: text.trim(),
+      embedding: embedding
     });
 
-    setText("");
+
+  if (thoughtError) {
+    console.log("Error saving thought:");
+    console.log(thoughtError);
+
+    setReleaseError(
+      "Your thought could not be released."
+    );
+
     setReleasing(false);
+
+    return;
   }
+
+
+  // 8. The participant has now released something, so their star is allowed to appear publicly
+  const { error: updateError } = await supabase
+    .from("participants")
+    .update({
+      has_released: true
+    })
+    .eq("id", participantData.id);
+
+
+  if (updateError) {
+    setReleaseError(
+      "Your thought was saved, but your star could not be displayed."
+    );
+
+    setReleasing(false);
+
+    return;
+  }
+
+
+  // 9. Immediately show this star in the current browser
+  setStars((currentStars) => {
+
+    // Don't add the same star twice
+    if (currentStars.includes(starId)) {
+      return currentStars;
+    }
+
+    return [...currentStars, starId];
+  });
+
+
+  setText("");
+
+
+  setReleasing(false);
+}
 
   return (
     <main className="constellation-home">
