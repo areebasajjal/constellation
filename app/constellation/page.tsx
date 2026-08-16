@@ -224,16 +224,13 @@ async function handleRelease() {
   const embeddingData =
     await embeddingResponse.json();
 
-  console.log("6. Embedding response received");
-  console.log("embeddingData:", embeddingData);
-
 
   const embedding =
     embeddingData.embedding;
 
     if (!Array.isArray(embedding) || embedding.length !== 512) {
 
-  console.log("Invalid embedding received:");
+
   console.log(embedding);
 
   setReleaseError(
@@ -255,7 +252,6 @@ async function handleRelease() {
 
   // Permanently save the private thought
   // and its embedding in Supabase.
-  console.log("7. Trying thought insert");
 
 
   const { error: thoughtError } =
@@ -268,8 +264,6 @@ async function handleRelease() {
         embedding: embedding
       });
 
-
-  console.log("8. Thought insert finished");
   console.log("thoughtError:", thoughtError);
 
 
@@ -290,9 +284,6 @@ async function handleRelease() {
 
   // The participant has now released something,
   // so their star is allowed to appear publicly.
-  console.log(
-    "9. Updating participant has_released"
-  );
 
 
   const { error: updateError } =
@@ -304,7 +295,6 @@ async function handleRelease() {
       .eq("id", participantData.id);
 
 
-  console.log("10. Participant update finished");
   console.log("updateError:", updateError);
 
 
@@ -338,7 +328,6 @@ async function handleRelease() {
   setReleasing(false);
 
 
-  console.log("11. Release completed successfully");
 }
 
   return (
