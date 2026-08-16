@@ -9,6 +9,9 @@ export default function SpacesPage() {
 
   // Stores the final space name after clicks "Create space".
   const [createdSpace, setCreatedSpace] = useState("");
+  const [spaceCode, setSpaceCode] = useState("");
+
+  const [joinCode, setJoinCode] = useState("");
 
   function handleSpaceNameChange(event: React.ChangeEvent<HTMLInputElement>) {
     const newName = event.target.value;
@@ -16,14 +19,27 @@ export default function SpacesPage() {
     setSpaceName(newName);
   }
 
+  function generateSpaceCode(name: string) {
+      const cleanName = name.replace(/\s+/g, "").toUpperCase();
+
+      const shortName = cleanName.slice(0, 6);
+
+      const randomNumber = Math.floor(100 + Math.random() * 900
+  );
+  
+  return shortName + randomNumber;
+}
+
   function handleCreateSpace() {
 
     if (spaceName.trim() === "") {
       return;
     }
 
+    const newCode = generateSpaceCode(spaceName);
     // Save the current typed space nameas the created space.
     setCreatedSpace(spaceName);
+    setSpaceCode(newCode);
 
     setSpaceName("");
   }
@@ -92,10 +108,11 @@ export default function SpacesPage() {
             </button>
 
             {createdSpace && (
-              <p>
-                Space created: {createdSpace}
-              </p>
-            )}
+                <div>
+                    <p> Space created: {createdSpace} </p>
+           <p> Space code: {spaceCode} </p>
+  </div>
+)}
 
           </div>
 
