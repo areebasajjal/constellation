@@ -129,7 +129,15 @@ export default function StarPage() {
 
 
   return (
+
+    
     <main className="star-id-page">
+        <div className="star-deco star-deco-1">✦</div>
+        <div className="star-deco star-deco-2">✧</div>
+        <div className="star-deco star-deco-3">⋆</div>
+        <div className="star-deco star-deco-4">✦</div>
+        <div className="star-deco star-deco-5">✧</div>
+        <div className="star-deco star-deco-6">⋆</div>
 
       <section className="star-id-content">
 
@@ -165,7 +173,7 @@ export default function StarPage() {
             </button>
           </>
         )}
-        
+
         {!loading && errorMessage && (
           <p>
             {errorMessage}
