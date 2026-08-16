@@ -4,6 +4,14 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
+// The small amount of invitation information this screen needs.
+type IncomingInvitation = {
+  id: string;
+  activity: string;
+  senderId: string;
+  senderStarId: string;
+};
+
 function ConstellationContent() {
   const searchParams = useSearchParams();
 
@@ -25,13 +33,17 @@ function ConstellationContent() {
 
   const [currentParticipantId, setCurrentParticipantId] = useState("");
 
-const [matchedParticipantId, setMatchedParticipantId] = useState("");
+  const [matchedParticipantId, setMatchedParticipantId] = useState("");
 
-const [sendingInvitation, setSendingInvitation] = useState(false);
+  const [sendingInvitation, setSendingInvitation] = useState(false);
 
-const [invitationSent, setInvitationSent] = useState(false);
+  const [invitationSent, setInvitationSent] = useState(false);
 
-const [invitationError, setInvitationError] = useState("");
+  const [invitationError, setInvitationError] = useState("");
+
+  // When another Star invites this person, we keep it here.
+  const [incomingInvitation, setIncomingInvitation] =
+    useState<IncomingInvitation | null>(null);
 
   useEffect(() => {
     async function loadSpaceData() {
@@ -54,6 +66,29 @@ const [invitationError, setInvitationError] = useState("");
 
       setSpaceName(spaceData.name);
 
+      // Find this person's database ID when the page opens.
+      // This lets invitations work even after a refresh.
+      if (starId) {
+        const {
+          data: currentParticipant,
+          error: currentParticipantError
+        } = await supabase
+          .from("participants")
+          .select("id")
+          .eq("space_id", spaceData.id)
+          .eq("star_id", starId)
+          .maybeSingle();
+
+        if (currentParticipantError || !currentParticipant) {
+          console.log(
+            "Could not load current participant:",
+            currentParticipantError
+          );
+        } else {
+          setCurrentParticipantId(currentParticipant.id);
+        }
+      }
+
       const { data: participantData, error: participantError } =
         await supabase.from("participants").select("star_id").eq("space_id", spaceData.id).eq("has_released", true);
 
@@ -71,7 +106,7 @@ const [invitationError, setInvitationError] = useState("");
     }
 
     loadSpaceData();
-  }, [spaceCode]);
+  }, [spaceCode, starId]);
 
   useEffect(() => {
     if (!spaceCode) {
@@ -97,6 +132,104 @@ const [invitationError, setInvitationError] = useState("");
       supabase.removeChannel(channel);
     };
   }, [spaceCode]);
+
+  // Load an invitation that may already be waiting, then listen
+  // for a new one while this page stays open.
+  useEffect(() => {
+    if (!currentParticipantId) {
+      return;
+    }
+
+    let stillMounted = true;
+
+    // Turn the sender's database ID into the friendly Star ID.
+    async function showInvitation(invitation: {
+      id: string;
+      activity: string;
+      sender_id: string;
+    }) {
+      const { data: sender, error: senderError } =
+        await supabase
+          .from("participants")
+          .select("star_id")
+          .eq("id", invitation.sender_id)
+          .maybeSingle();
+
+      if (senderError || !sender) {
+        console.log(
+          "Could not load invitation sender:",
+          senderError
+        );
+        return;
+      }
+
+      if (!stillMounted) {
+        return;
+      }
+
+      setIncomingInvitation({
+        id: invitation.id,
+        activity: invitation.activity,
+        senderId: invitation.sender_id,
+        senderStarId: sender.star_id
+      });
+    }
+
+    // If the invitation arrived earlier, show it now.
+    async function loadPendingInvitation() {
+      const { data: invitation, error } = await supabase
+        .from("connection_invitations")
+        .select("id, activity, sender_id")
+        .eq("receiver_id", currentParticipantId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.log("Could not load invitation:", error);
+        return;
+      }
+
+      if (invitation) {
+        await showInvitation(invitation);
+      }
+    }
+
+    loadPendingInvitation();
+
+    // New invitations arrive here without refreshing the page.
+    const invitationChannel = supabase
+      .channel(`invitations-${currentParticipantId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "connection_invitations",
+          filter: `receiver_id=eq.${currentParticipantId}`
+        },
+        async (payload) => {
+          console.log("Invitation received:", payload.new);
+
+          const invitation = payload.new as {
+            id: string;
+            activity: string;
+            sender_id: string;
+          };
+
+          await showInvitation(invitation);
+        }
+      )
+      .subscribe((status) => {
+        console.log("Invitation subscription:", status);
+      });
+
+    return () => {
+      stillMounted = false;
+      supabase.removeChannel(invitationChannel);
+    };
+  }, [currentParticipantId]);
 
 
 // test change saviour
@@ -356,7 +489,7 @@ async function handleRelease() {
         query_embedding: embedding,
         current_space_id: spaceData.id,
         current_participant_id: participantData.id,
-        similarity_threshold: 0.60
+        similarity_threshold: 0.70
       }
     );
 
@@ -477,6 +610,77 @@ async function handleSendInvitation() {
     setSendingInvitation(false);
   }
 }
+
+  // The receiver sees this card before the normal match screen.
+  if (incomingInvitation && starId) {
+    return (
+      <main className="match-screen">
+        <section className="match-card">
+          <p className="match-label">
+            A SMALL INVITATION
+          </p>
+
+          <div className="match-star-pair">
+            <div className="match-star-id">
+              <span>✦</span>
+              <p>{incomingInvitation.senderStarId}</p>
+            </div>
+
+            <div className="match-pair-symbol">→</div>
+
+            <div className="match-star-id">
+              <span>✦</span>
+              <p>{starId}</p>
+            </div>
+          </div>
+
+          <section className="activity-confirmation">
+            <p className="activity-kicker">
+              YOU HAVE BEEN INVITED TO
+            </p>
+
+            <div className="selected-activity-icon">✦</div>
+
+            <h2>{incomingInvitation.activity}</h2>
+
+            <p className="activity-description">
+              {incomingInvitation.senderStarId} would like to share
+              this low-pressure activity with you. Would you be
+              interested?
+            </p>
+
+            <div className="confirmation-buttons">
+              <button
+                className="send-invitation-button"
+                onClick={() => {
+                  // We will save this answer in the next step.
+                  console.log(
+                    "Accept invitation:",
+                    incomingInvitation.id
+                  );
+                }}
+              >
+                Yes, I&apos;m interested
+              </button>
+
+              <button
+                className="back-button"
+                onClick={() => {
+                  // We will save this answer in the next step.
+                  console.log(
+                    "Decline invitation:",
+                    incomingInvitation.id
+                  );
+                }}
+              >
+                Not right now
+              </button>
+            </div>
+          </section>
+        </section>
+      </main>
+    );
+  }
 
   if (matchedStar && starId) {
     return (
