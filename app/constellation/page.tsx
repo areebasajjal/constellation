@@ -10,10 +10,14 @@ function ConstellationContent() {
   const spaceCode = searchParams.get("space");
   const starId = searchParams.get("star");
 
+
   const [text, setText] = useState("");
   const [spaceName, setSpaceName] = useState("");
+
   const [stars, setStars] = useState<string[]>([]);
+
   const [releaseError, setReleaseError] = useState("");
+  const [showActivities, setShowActivities] = useState(false);
   const [releasing, setReleasing] = useState(false);
 
   const [matchedStar, setMatchedStar] = useState("");
@@ -440,9 +444,37 @@ async function handleRelease() {
             connection and belonging.
           </p>
 
-          <button className="connection-button">
+       {!showActivities ? ( <button
+             className="connection-button"
+            onClick={() => setShowActivities(true)}>
             Make a connection
-          </button>
+  </button>) : (
+  <section className="activity-section">
+
+    <p className="activity-kicker">
+      CHOOSE A SHARED ACTIVITY
+    </p>
+
+    <h2>
+      What would feel comfortable?
+    </h2>
+
+    <p className="activity-description">
+      Choose one small, low-pressure activity.
+      The other Star will be able to accept or decline.
+    </p>
+
+    <div className="activity-options">
+      <button>Take a 10-minute walk</button>
+      <button>Grab coffee or tea</button>
+      <button>Sit somewhere quiet</button>
+      <button>Attend the next session together</button>
+      <button>Try a short grounding exercise</button>
+      <button>listen to music together</button>
+    </div>
+
+  </section>
+)}
         </section>
       </main>
     );
