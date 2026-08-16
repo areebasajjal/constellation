@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { containsProfanity } from "../../../lib/moderation";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
     // Check for other content we don't want  participating in community matching.
     const harmfulContent =
       categories["harassment/threatening"] ||
-      categories["hate"] ||
+      categories["hate"] || 
       categories["hate/threatening"] ||
       categories["violence/graphic"] ||
       categories["sexual/minors"] ||
@@ -66,7 +67,12 @@ export async function POST(request: Request) {
       );
     }
 
-
+    if (containsProfanity(text)) {
+        return NextResponse.json({
+            safe: false,
+          action: "profanity"
+        });
+        }
 
     // Other unsafe material gets blocked from entering the constellation.
     if (harmfulContent) {
