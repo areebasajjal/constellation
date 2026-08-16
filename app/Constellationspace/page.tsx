@@ -65,16 +65,23 @@ export default function SpacesPage() {
 }
 
 
-    function handleJoinSpace() {
-
-  // Don't do anything if the box is empty
-  if (joinCode.trim() === "") {
+  async function handleJoinSpace() {
+  
+    if (joinCode.trim() === "") {
     return;
   }
 
-  // Check if the entered code matches the created space code
-  if (joinCode.toUpperCase() === spaceCode) {
-    setJoinMessage("Space found!");
+  const { data, error } = await supabase.from("spaces").select("*").eq("code", joinCode.toUpperCase()).maybeSingle();
+
+  if (error) {
+      console.log("Error finding space:");
+      console.log(error);
+      setJoinMessage("Something went wrong.");
+      return;
+  }
+
+  if (data) {
+    setJoinMessage(`Space found: ${data.name}`);
   } else {
     setJoinMessage("Space not found.");
   }
@@ -116,7 +123,7 @@ export default function SpacesPage() {
               </button>
 
         {joinMessage && ( <p>{joinMessage}</p>)}
-</div>
+               </div>
 
 
           <div className="space-option">
