@@ -18,9 +18,20 @@ function ConstellationContent() {
 
   const [releaseError, setReleaseError] = useState("");
   const [showActivities, setShowActivities] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState("");
   const [releasing, setReleasing] = useState(false);
 
   const [matchedStar, setMatchedStar] = useState("");
+
+  const [currentParticipantId, setCurrentParticipantId] = useState("");
+
+const [matchedParticipantId, setMatchedParticipantId] = useState("");
+
+const [sendingInvitation, setSendingInvitation] = useState(false);
+
+const [invitationSent, setInvitationSent] = useState(false);
+
+const [invitationError, setInvitationError] = useState("");
 
   useEffect(() => {
     async function loadSpaceData() {
@@ -182,6 +193,8 @@ async function handleRelease() {
 
     return;
   }
+
+  setCurrentParticipantId(participantData.id);
 
 
 
@@ -357,12 +370,14 @@ async function handleRelease() {
   console.log("Match found:", matchData);
 
   setMatchedStar(matchData[0].star_id);
+  setMatchedParticipantId(matchData[0].participant_id);
 
 } else {
 
   console.log("No match above threshold.");
 
   setMatchedStar("");
+  setMatchedParticipantId("");
 }
 
   // The participant has now released something,
@@ -415,6 +430,54 @@ async function handleRelease() {
   setReleasing(false);
 }
 
+async function handleSendInvitation() {
+  if (
+    !spaceCode ||
+    !selectedActivity ||
+    !currentParticipantId ||
+    !matchedParticipantId
+  ) {
+    setInvitationError(
+      "The invitation is missing some information."
+    );
+    return;
+  }
+
+  setSendingInvitation(true);
+  setInvitationError("");
+
+  try {
+    const response = await fetch("/api/invitations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        spaceCode,
+        senderId: currentParticipantId,
+        receiverId: matchedParticipantId,
+        activity: selectedActivity
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setInvitationError(
+        result.error || "The invitation could not be sent."
+      );
+      return;
+    }
+
+    setInvitationSent(true);
+  } catch (error) {
+    console.error("Sending invitation failed:", error);
+    setInvitationError("The invitation could not be sent.");
+  } finally {
+    setSendingInvitation(false);
+  }
+}
+
   if (matchedStar && starId) {
     return (
       <main className="match-screen">
@@ -444,37 +507,93 @@ async function handleRelease() {
             connection and belonging.
           </p>
 
-       {!showActivities ? ( <button
-             className="connection-button"
-            onClick={() => setShowActivities(true)}>
-            Make a connection
-  </button>) : (
-  <section className="activity-section">
+          {!showActivities ? (
+            <button
+              className="connection-button"
+              onClick={() => setShowActivities(true)}
+            >
+              Make a connection
+            </button>
+          ) : invitationSent ? (
+            <section className="activity-confirmation">
+              <p className="activity-kicker">INVITATION SENT</p>
+              <div className="selected-activity-icon">✦</div>
+              <h2>{selectedActivity}</h2>
+              <p className="invitation-success">
+                Your invitation was sent to {matchedStar}.
+              </p>
+            </section>
+          ) : selectedActivity ? (
+            <section className="activity-confirmation">
+              <p className="activity-kicker">YOUR INVITATION</p>
+              <div className="selected-activity-icon">✦</div>
+              <h2>{selectedActivity}</h2>
+              <p className="activity-description">
+                Would you like to invite {matchedStar} to do this
+                activity with you?
+              </p>
 
-    <p className="activity-kicker">
-      CHOOSE A SHARED ACTIVITY
-    </p>
+              {invitationError && (
+                <p className="invitation-error">{invitationError}</p>
+              )}
 
-    <h2>
-      What would feel comfortable?
-    </h2>
+              <div className="confirmation-buttons">
+                <button
+                  className="send-invitation-button"
+                  onClick={handleSendInvitation}
+                  disabled={sendingInvitation}
+                >
+                  {sendingInvitation
+                    ? "Sending..."
+                    : "Yes, send invitation"}
+                </button>
 
-    <p className="activity-description">
-      Choose one small, low-pressure activity.
-      The other Star will be able to accept or decline.
-    </p>
+                <button
+                  className="back-button"
+                  onClick={() => {
+                    setSelectedActivity("");
+                    setInvitationError("");
+                  }}
+                >
+                  Choose another activity
+                </button>
+              </div>
+            </section>
+          ) : (
+            <section className="activity-section">
+              <p className="activity-kicker">
+                CHOOSE A SHARED ACTIVITY
+              </p>
 
-    <div className="activity-options">
-      <button>🌿 Take a 10-minute walk</button>
-      <button>☕️ Grab coffee or tea</button>
-      <button>🧘 Sit somewhere quiet</button>
-      <button>🎟️ Attend the next session together</button>
-      <button>🧘 Try a short grounding exercise</button>
-      <button>🎵 listen to music together</button>
-    </div>
+              <h2>What would feel comfortable?</h2>
 
-  </section>
-)}
+              <p className="activity-description">
+                Choose one small, low-pressure activity. The other
+                Star will be able to accept or decline.
+              </p>
+
+              <div className="activity-options">
+                <button onClick={() => setSelectedActivity("Take a 10-minute walk")}>
+                  🌿 Take a 10-minute walk
+                </button>
+                <button onClick={() => setSelectedActivity("Grab coffee or tea")}>
+                  ☕️ Grab coffee or tea
+                </button>
+                <button onClick={() => setSelectedActivity("Sit somewhere quiet")}>
+                  🧘 Sit somewhere quiet
+                </button>
+                <button onClick={() => setSelectedActivity("Attend the next session together")}>
+                  🎟️ Attend the next session together
+                </button>
+                <button onClick={() => setSelectedActivity("Try a short grounding exercise")}>
+                  🧘 Try a short grounding exercise
+                </button>
+                <button onClick={() => setSelectedActivity("Listen to music together")}>
+                  🎵 Listen to music together
+                </button>
+              </div>
+            </section>
+          )}
         </section>
       </main>
     );
@@ -579,3 +698,4 @@ export default function ConstellationPage() {
     </Suspense>
   );
 }
+
