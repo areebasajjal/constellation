@@ -87,6 +87,7 @@ function ConstellationContent() {
       setText(event.target.value);
   }
 
+
 // handle release click option
 async function handleRelease() {
 
@@ -177,11 +178,9 @@ async function handleRelease() {
   }
 
 
-  // Send the private thought to our API route.
-  // route.ts then talks to OpenAI and creates the embedding.
-  console.log("4. Calling /api/embed");
 
-
+  // Send the thought to our own API route.
+  // route.ts checks safety first, then creates the embedding.
   const embeddingResponse = await fetch("/api/embed", {
     method: "POST",
 
@@ -201,7 +200,7 @@ async function handleRelease() {
   );
 
 
-  // If the API route failed, print the real error.
+  // If the API route failed.
   if (!embeddingResponse.ok) {
 
     const errorData =
@@ -220,40 +219,80 @@ async function handleRelease() {
   }
 
 
-  // Read the embedding returned by route.ts.
+  // Read the response from route.ts.
   const embeddingData =
     await embeddingResponse.json();
 
 
+
+  // Self-harm safety response.
+  if (
+    embeddingData.safe === false &&
+    embeddingData.action === "support"
+  ) {
+
+    setReleaseError(
+      "It sounds like you're carrying something that may need more support than this constellation can provide. Please consider reaching out to someone you trust or appropriate local support."
+    );
+
+    setReleasing(false);
+
+    return;
+  }
+
+
+
+  // Other unsafe content.
+  if (
+    embeddingData.safe === false &&
+    embeddingData.action === "blocked"
+  ) {
+
+    setReleaseError(
+      "This thought can't be released into the constellation due to unsafe content."
+    );
+
+    setReleasing(false);
+
+    return;
+  }
+
+
+
+  // Safe thought.
   const embedding =
     embeddingData.embedding;
 
-    if (!Array.isArray(embedding) || embedding.length !== 512) {
+
+  // Make sure we actually received
+  // the expected 512-number vector.
+  if (
+    !Array.isArray(embedding) ||
+    embedding.length !== 512
+  ) {
+
+    console.log("Invalid embedding:");
+    console.log(embedding);
+
+    setReleaseError(
+      "The thought embedding could not be generated."
+    );
+
+    setReleasing(false);
+
+    return;
+  }
 
 
-  console.log(embedding);
-
-  setReleaseError(
-    "The thought embedding could not be generated."
-  );
-
-  setReleasing(false);
-
-  return;
-}
-
-
-  // This should normally say 512.
   console.log(
     "Embedding length:",
-    embedding?.length
+    embedding.length
   );
+
 
 
   // Permanently save the private thought
   // and its embedding in Supabase.
-
-
   const { error: thoughtError } =
     await supabase
       .from("thoughts")
@@ -264,7 +303,11 @@ async function handleRelease() {
         embedding: embedding
       });
 
-  console.log("thoughtError:", thoughtError);
+
+  console.log(
+    "thoughtError:",
+    thoughtError
+  );
 
 
   if (thoughtError) {
@@ -282,10 +325,53 @@ async function handleRelease() {
   }
 
 
+
+  // VECTOR MATCHING
+
+
+  // Compare this new embedding against other thoughts in the SAME space.
+  const { data: matchData, error: matchError } =
+    await supabase.rpc(
+      "match_thoughts",
+      {
+        query_embedding: embedding,
+        current_space_id: spaceData.id,
+        current_participant_id: participantData.id,
+        similarity_threshold: 0.78
+      }
+    );
+
+
+  if (matchError) {
+
+    console.log("Matching error:");
+    console.log(matchError);
+
+  } else {
+
+    console.log("Match result:", matchData);
+
+if (matchData && matchData.length > 0) {
+  console.log(
+    "MATCH FOUND:",
+    starId,
+    "↔",
+    matchData[0].star_id
+  );
+
+  console.log(
+    "SIMILARITY:",
+    matchData[0].similarity
+  );
+} else {
+  console.log("NO MATCH ABOVE THRESHOLD");
+}
+  }
+
+
+
   // The participant has now released something,
   // so their star is allowed to appear publicly.
-
-
   const { error: updateError } =
     await supabase
       .from("participants")
@@ -295,7 +381,10 @@ async function handleRelease() {
       .eq("id", participantData.id);
 
 
-  console.log("updateError:", updateError);
+  console.log(
+    "updateError:",
+    updateError
+  );
 
 
   if (updateError) {
@@ -310,24 +399,25 @@ async function handleRelease() {
   }
 
 
+
   // Immediately show this star
   // in the current browser.
   setStars((currentStars) => {
 
-    // Don't add the same star twice.
     if (currentStars.includes(starId)) {
       return currentStars;
     }
 
-    return [...currentStars, starId];
+    return [
+      ...currentStars,
+      starId
+    ];
   });
 
 
   setText("");
 
   setReleasing(false);
-
-
 }
 
   return (
