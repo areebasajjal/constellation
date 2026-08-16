@@ -231,6 +231,20 @@ async function handleRelease() {
   const embedding =
     embeddingData.embedding;
 
+    if (!Array.isArray(embedding) || embedding.length !== 512) {
+
+  console.log("Invalid embedding received:");
+  console.log(embedding);
+
+  setReleaseError(
+    "The thought embedding could not be generated."
+  );
+
+  setReleasing(false);
+
+  return;
+}
+
 
   // This should normally say 512.
   console.log(
@@ -326,6 +340,7 @@ async function handleRelease() {
 
   console.log("11. Release completed successfully");
 }
+
   return (
     <main className="constellation-home">
 
