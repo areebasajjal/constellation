@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// debugging to see if this works now
 export const dynamic = "force-dynamic";
 
 const supabase = createClient(
@@ -14,7 +13,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { spaceCode, senderId, receiverId, activity } = body;
 
-    // Make sure the request contains everything needed.
     if (!spaceCode || !senderId || !receiverId || !activity) {
       return NextResponse.json(
         { error: "Invitation information is missing." },
@@ -29,7 +27,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Keep validation simple so tiny wording changes do not break invitations.
     if (
       typeof activity !== "string" ||
       activity.trim().length === 0 ||
@@ -41,7 +38,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find the space that both Stars should belong to.
     const { data: space, error: spaceError } = await supabase
       .from("spaces")
       .select("id")
@@ -55,7 +51,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Do not create invitations between Stars from different spaces.
     const { data: participants, error: participantError } =
       await supabase
         .from("participants")
@@ -68,18 +63,12 @@ export async function POST(request: Request) {
       !participants ||
       participants.length !== 2
     ) {
-      console.error(
-        "Participant verification failed:",
-        participantError
-      );
-
       return NextResponse.json(
         { error: "The matched participants could not be verified." },
         { status: 400 }
       );
     }
 
-    // Save the invitation so the receiver can load it or get it live.
     const { data: invitation, error: invitationError } =
       await supabase
         .from("connection_invitations")
@@ -97,10 +86,7 @@ export async function POST(request: Request) {
       console.error("Invitation insert failed:", invitationError);
 
       return NextResponse.json(
-        {
-          error: "Invitation could not be saved.",
-          details: invitationError.message
-        },
+        { error: "Invitation could not be saved." },
         { status: 500 }
       );
     }
@@ -111,6 +97,75 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { error: "Invitation could not be sent." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { invitationId, responderId, status } = body;
+
+    if (!invitationId || !responderId || !status) {
+      return NextResponse.json(
+        { error: "Response information is missing." },
+        { status: 400 }
+      );
+    }
+
+    if (status !== "accepted" && status !== "declined") {
+      return NextResponse.json(
+        { error: "That invitation response is invalid." },
+        { status: 400 }
+      );
+    }
+
+    // Only the intended receiver should be able to answer this row.
+    const { data: invitation, error: invitationError } =
+      await supabase
+        .from("connection_invitations")
+        .select("id, receiver_id, status")
+        .eq("id", invitationId)
+        .maybeSingle();
+
+    if (
+      invitationError ||
+      !invitation ||
+      invitation.receiver_id !== responderId ||
+      invitation.status !== "pending"
+    ) {
+      return NextResponse.json(
+        { error: "This invitation can no longer be answered." },
+        { status: 400 }
+      );
+    }
+
+    const { data: updatedInvitation, error: updateError } =
+      await supabase
+        .from("connection_invitations")
+        .update({ status })
+        .eq("id", invitationId)
+        .eq("receiver_id", responderId)
+        .eq("status", "pending")
+        .select("id, activity, status")
+        .single();
+
+    if (updateError) {
+      console.error("Invitation response failed:", updateError);
+
+      return NextResponse.json(
+        { error: "Your response could not be saved." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ invitation: updatedInvitation });
+  } catch (error) {
+    console.error("Invitation response route failed:", error);
+
+    return NextResponse.json(
+      { error: "Your response could not be saved." },
       { status: 500 }
     );
   }

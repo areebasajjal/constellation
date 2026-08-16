@@ -12,6 +12,12 @@ type IncomingInvitation = {
   senderStarId: string;
 };
 
+type InvitationStatus =
+  | "idle"
+  | "pending"
+  | "accepted"
+  | "declined";
+
 function ConstellationContent() {
   const searchParams = useSearchParams();
 
@@ -40,6 +46,15 @@ function ConstellationContent() {
   const [invitationSent, setInvitationSent] = useState(false);
 
   const [invitationError, setInvitationError] = useState("");
+
+  // The sender needs this ID so they can listen for the answer.
+  const [sentInvitationId, setSentInvitationId] = useState("");
+
+  const [invitationStatus, setInvitationStatus] =
+    useState<InvitationStatus>("idle");
+
+  const [respondingToInvitation, setRespondingToInvitation] =
+    useState(false);
 
   // When another Star invites this person, we keep it here.
   const [incomingInvitation, setIncomingInvitation] =
@@ -230,6 +245,38 @@ function ConstellationContent() {
       supabase.removeChannel(invitationChannel);
     };
   }, [currentParticipantId]);
+
+  // After sending an invitation, listen for the other Star's answer.
+  useEffect(() => {
+    if (!sentInvitationId) {
+      return;
+    }
+
+    const responseChannel = supabase
+      .channel(`invitation-response-${sentInvitationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "connection_invitations",
+          filter: `id=eq.${sentInvitationId}`
+        },
+        (payload) => {
+          const status = payload.new.status as InvitationStatus;
+
+          console.log("Invitation answer received:", status);
+          setInvitationStatus(status);
+        }
+      )
+      .subscribe((status) => {
+        console.log("Response subscription:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(responseChannel);
+    };
+  }, [sentInvitationId]);
 
 
 // test change saviour
@@ -620,6 +667,8 @@ async function handleSendInvitation() {
       return;
     }
 
+    setSentInvitationId(result.invitation.id);
+    setInvitationStatus("pending");
     setInvitationSent(true);
   } catch (error) {
     console.error("Sending invitation failed:", error);
@@ -628,6 +677,93 @@ async function handleSendInvitation() {
     setSendingInvitation(false);
   }
 }
+
+// Save the receiver's Yes or No answer through our API route.
+async function handleInvitationResponse(
+  status: "accepted" | "declined"
+) {
+  if (!incomingInvitation || !currentParticipantId) {
+    return;
+  }
+
+  setRespondingToInvitation(true);
+  setInvitationError("");
+
+  try {
+    const response = await fetch("/api/invitations", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        invitationId: incomingInvitation.id,
+        responderId: currentParticipantId,
+        status
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setInvitationError(
+        result.error || "Your response could not be saved."
+      );
+      return;
+    }
+
+    setInvitationStatus(status);
+  } catch (error) {
+    console.error("Invitation response failed:", error);
+    setInvitationError("Your response could not be saved.");
+  } finally {
+    setRespondingToInvitation(false);
+  }
+}
+
+  // Once both people opt in, they share the same confirmation screen.
+  if (invitationStatus === "accepted" && starId) {
+    const otherStar =
+      incomingInvitation?.senderStarId || matchedStar;
+
+    return (
+      <main className="match-screen">
+        <section className="receiver-invitation-card">
+          <p className="receiver-kicker">CONNECTION CONFIRMED</p>
+
+          <div className="received-activity-icon">✦</div>
+
+          <h1>You both said yes.</h1>
+
+          <p className="received-activity-message">
+            {starId} and {otherStar} are both open to: {" "}
+            <strong>{selectedActivity || incomingInvitation?.activity}</strong>
+          </p>
+
+          <p className="received-activity-message">
+            Choose a familiar public place and keep the plan
+            comfortable for both of you.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
+  // A decline closes the invitation gently for either participant.
+  if (invitationStatus === "declined") {
+    return (
+      <main className="match-screen">
+        <section className="receiver-invitation-card">
+          <p className="receiver-kicker">NOT RIGHT NOW</p>
+          <div className="received-activity-icon">☾</div>
+          <h1>No pressure at all.</h1>
+          <p className="received-activity-message">
+            This invitation has been closed. You can return to the
+            constellation whenever you are ready.
+          </p>
+        </section>
+      </main>
+    );
+  }
 
   // The receiver sees this card before the normal match screen.
 if (incomingInvitation && starId) {
@@ -713,29 +849,27 @@ if (incomingInvitation && starId) {
 
             <button
               className="accept-invitation-button"
-              onClick={() => {
-                console.log(
-                  "Accept invitation:",
-                  incomingInvitation.id
-                );
-              }}
+              onClick={() => handleInvitationResponse("accepted")}
+              disabled={respondingToInvitation}
             >
-              Yes, I&apos;m interested ✦
+              {respondingToInvitation
+                ? "Saving..."
+                : "Yes, I’m interested ✦"}
             </button>
 
             <button
               className="decline-invitation-button"
-              onClick={() => {
-                console.log(
-                  "Decline invitation:",
-                  incomingInvitation.id
-                );
-              }}
+              onClick={() => handleInvitationResponse("declined")}
+              disabled={respondingToInvitation}
             >
               Not right now
             </button>
 
           </div>
+
+          {invitationError && (
+            <p className="invitation-error">{invitationError}</p>
+          )}
 
         </section>
 
@@ -783,11 +917,12 @@ if (incomingInvitation && starId) {
             </button>
           ) : invitationSent ? (
             <section className="activity-confirmation">
-              <p className="activity-kicker">INVITATION SENT</p>
+              <p className="activity-kicker">WAITING FOR A RESPONSE</p>
               <div className="selected-activity-icon">✦</div>
               <h2>{selectedActivity}</h2>
               <p className="invitation-success">
-                Your invitation was sent to {matchedStar}.
+                Your invitation was sent to {matchedStar}. This
+                screen will update when they answer.
               </p>
             </section>
           ) : selectedActivity ? (
