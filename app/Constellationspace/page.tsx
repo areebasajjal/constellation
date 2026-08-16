@@ -3,6 +3,12 @@ export default function SpacesPage() {
     <main className="space-page">
 
       <section className="space-content">
+      <div className="star star-1 star-bright"></div>
+
+      <div className="star star-2"></div>
+
+      <div className="star star-77"></div>
+
 
         <p className="space-kicker">
           ENTER THE CONSTELLATION
@@ -13,7 +19,6 @@ export default function SpacesPage() {
         <div className="space-options">
 
           <div className="space-option">
-            <span className="space-number">01</span>
 
             <h2>Join a Space</h2>
 
@@ -31,7 +36,6 @@ export default function SpacesPage() {
           </div>
 
           <div className="space-option">
-            <span className="space-number">02</span>
 
             <h2>Create a Space</h2>
 
