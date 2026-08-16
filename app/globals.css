@@ -123,10 +123,11 @@ body {
 
   color: #8d97ad;
 }
-
-/* main title constellation */
+/* main title */
 .landing-page h1 {
-  margin: 0;
+  margin: 0 auto;
+
+  width: fit-content;
 
   font-size: clamp(48px, 8vw, 92px);
   font-weight: 500;
@@ -137,7 +138,9 @@ body {
   color: #f7efd8;
 
   line-height: 0.95;
+
   text-align: center;
+
   transform: translateX(-0.07em);
 }
 
