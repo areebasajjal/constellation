@@ -592,6 +592,25 @@ async function handleSendInvitation() {
       })
     });
 
+    // API routes should return JSON. If Vercel sends an HTML error
+    // page instead, show a useful message rather than crashing.
+    const contentType = response.headers.get("content-type");
+
+    if (!contentType?.includes("application/json")) {
+      const responseText = await response.text();
+
+      console.error(
+        "Invitation API returned a non-JSON response:",
+        response.status,
+        responseText
+      );
+
+      setInvitationError(
+        "The invitation service is not available in this deployment."
+      );
+      return;
+    }
+
     const result = await response.json();
 
     if (!response.ok) {
@@ -946,4 +965,3 @@ export default function ConstellationPage() {
     </Suspense>
   );
 }
-

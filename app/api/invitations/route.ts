@@ -1,25 +1,20 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// debugging to see if this works now
+export const dynamic = "force-dynamic";
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
 );
-
-const allowedActivities = [
-  "Take a 10-minute walk",
-  "Grab coffee or tea",
-  "Sit somewhere quiet",
-  "Attend the next session together",
-  "Try a short grounding exercise",
-  "Listen to music together"
-];
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { spaceCode, senderId, receiverId, activity } = body;
 
+    // Make sure the request contains everything needed.
     if (!spaceCode || !senderId || !receiverId || !activity) {
       return NextResponse.json(
         { error: "Invitation information is missing." },
@@ -34,13 +29,19 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!allowedActivities.includes(activity)) {
+    // Keep validation simple so tiny wording changes do not break invitations.
+    if (
+      typeof activity !== "string" ||
+      activity.trim().length === 0 ||
+      activity.trim().length > 100
+    ) {
       return NextResponse.json(
-        { error: "That activity is not available." },
+        { error: "The selected activity is invalid." },
         { status: 400 }
       );
     }
 
+    // Find the space that both Stars should belong to.
     const { data: space, error: spaceError } = await supabase
       .from("spaces")
       .select("id")
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Do not create invitations between Stars from different spaces.
     const { data: participants, error: participantError } =
       await supabase
         .from("participants")
@@ -66,12 +68,18 @@ export async function POST(request: Request) {
       !participants ||
       participants.length !== 2
     ) {
+      console.error(
+        "Participant verification failed:",
+        participantError
+      );
+
       return NextResponse.json(
         { error: "The matched participants could not be verified." },
         { status: 400 }
       );
     }
 
+    // Save the invitation so the receiver can load it or get it live.
     const { data: invitation, error: invitationError } =
       await supabase
         .from("connection_invitations")
@@ -79,7 +87,7 @@ export async function POST(request: Request) {
           space_id: space.id,
           sender_id: senderId,
           receiver_id: receiverId,
-          activity,
+          activity: activity.trim(),
           status: "pending"
         })
         .select("id, activity, status")
@@ -87,8 +95,12 @@ export async function POST(request: Request) {
 
     if (invitationError) {
       console.error("Invitation insert failed:", invitationError);
+
       return NextResponse.json(
-        { error: "Invitation could not be saved." },
+        {
+          error: "Invitation could not be saved.",
+          details: invitationError.message
+        },
         { status: 500 }
       );
     }
@@ -96,8 +108,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ invitation }, { status: 201 });
   } catch (error) {
     console.error("Invitation route failed:", error);
+
     return NextResponse.json(
       { error: "Invitation could not be sent." },
       { status: 500 }
     );
-  }}
+  }
+}
