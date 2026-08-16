@@ -7,12 +7,12 @@ const supabase = createClient(
 );
 
 const allowedActivities = [
-  "🌿 Take a 10-minute walk",
-  " ☕️ Grab coffee or tea",
-  " 🧘 Sit somewhere quiet",
-  " 🎟️ Attend the next session together",
-  " 🧘 Try a short grounding exercise",
-  " 🎵 Listen to music together"
+  "Take a 10-minute walk",
+  "Grab coffee or tea",
+  "Sit somewhere quiet",
+  "Attend the next session together",
+  "Try a short grounding exercise",
+  "Listen to music together"
 ];
 
 export async function POST(request: Request) {
