@@ -310,7 +310,7 @@ body {
   }
 
   .landing-page h1 {
-    font-size: clamp(38px, 11vw, 50px);
+    font-size: clamp(38px, 11vw, 57px);
 
     letter-spacing: 0.05em;
 
