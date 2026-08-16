@@ -16,6 +16,8 @@ function ConstellationContent() {
   const [releaseError, setReleaseError] = useState("");
   const [releasing, setReleasing] = useState(false);
 
+  const [matchedStar, setMatchedStar] = useState("");
+
   useEffect(() => {
     async function loadSpaceData() {
       if (!spaceCode) {
@@ -71,8 +73,8 @@ function ConstellationContent() {
           table: "participants"
         },
         () => {
-          window.location.reload();
-        }
+      console.log("A participant was updated.");
+      }
       )
       .subscribe();
 
@@ -337,38 +339,27 @@ async function handleRelease() {
         query_embedding: embedding,
         current_space_id: spaceData.id,
         current_participant_id: participantData.id,
-        similarity_threshold: 0.78
+        similarity_threshold: 0.60
       }
     );
 
+   if (matchError) {
 
-  if (matchError) {
+  console.log("Matching error:");
+  console.log(matchError);
 
-    console.log("Matching error:");
-    console.log(matchError);
+} else if (matchData && matchData.length > 0) {
 
-  } else {
+  console.log("Match found:", matchData);
 
-    console.log("Match result:", matchData);
+  setMatchedStar(matchData[0].star_id);
 
-if (matchData && matchData.length > 0) {
-  console.log(
-    "MATCH FOUND:",
-    starId,
-    "↔",
-    matchData[0].star_id
-  );
-
-  console.log(
-    "SIMILARITY:",
-    matchData[0].similarity
-  );
 } else {
-  console.log("NO MATCH ABOVE THRESHOLD");
+
+  console.log("No match above threshold.");
+
+  setMatchedStar("");
 }
-  }
-
-
 
   // The participant has now released something,
   // so their star is allowed to appear publicly.
@@ -419,6 +410,43 @@ if (matchData && matchData.length > 0) {
 
   setReleasing(false);
 }
+
+  if (matchedStar && starId) {
+    return (
+      <main className="match-screen">
+        <section className="match-card">
+          <p className="match-label">
+            SHARED SIGNAL FOUND
+          </p>
+
+          <div className="match-star-pair">
+            <div className="match-star-id">
+              <span>✦</span>
+              <p>{starId}</p>
+            </div>
+
+            <div className="match-pair-symbol">+</div>
+
+            <div className="match-star-id">
+              <span>✦</span>
+              <p>{matchedStar}</p>
+            </div>
+          </div>
+
+          <h1>You are carrying something similar.</h1>
+
+          <p className="match-sentiment">
+            {starId} and {matchedStar} share a similar signal around
+            connection and belonging.
+          </p>
+
+          <button className="connection-button">
+            Make a connection
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="constellation-home">
@@ -500,7 +528,6 @@ if (matchData && matchData.length > 0) {
                 <p>
                   {star}
                 </p>
-
               </div>
             ))}
 
