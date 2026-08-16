@@ -14,6 +14,8 @@ export default function SpacesPage() {
 
   const [joinCode, setJoinCode] = useState("");
 
+  const [joinMessage, setJoinMessage] = useState("");
+
   // Function to handle changes in the "Create a Space" input field.
   function handleSpaceNameChange(event: React.ChangeEvent<HTMLInputElement>) {
     const newName = event.target.value;
@@ -40,7 +42,7 @@ export default function SpacesPage() {
     }
 
     const newCode = generateSpaceCode(spaceName);
-    
+
     setCreatedSpace(spaceName);
     setSpaceCode(newCode);
 
@@ -51,6 +53,22 @@ export default function SpacesPage() {
    function handleJoinCodeChange(event: React.ChangeEvent<HTMLInputElement>) {
         const newCode = event.target.value;
         setJoinCode(newCode);
+}
+
+
+    function handleJoinSpace() {
+
+  // Don't do anything if the box is empty
+  if (joinCode.trim() === "") {
+    return;
+  }
+
+  // Check if the entered code matches the created space code
+  if (joinCode.toUpperCase() === spaceCode) {
+    setJoinMessage("Space found!");
+  } else {
+    setJoinMessage("Space not found.");
+  }
 }
 
 
@@ -73,27 +91,23 @@ export default function SpacesPage() {
         <h1>Find your space.</h1>
 
         <div className="space-options">
-
-          <div className="space-option">
+            <div className="space-option">
 
             <h2>Join a Space</h2>
+      <p> Enter a space code shared by your community. </p>
+      
+      <input
+         type="text"
+         placeholder="e.g. GIRLIES26"
+         value={joinCode}
+         onChange={handleJoinCodeChange} />
 
-            <p>
-              Enter a space code shared by your community.
-            </p>
+         <button onClick={handleJoinSpace}>
+                   Join space →
+              </button>
 
-            <input
-              type="text"
-              placeholder="e.g. GIRLIES26"
-              value={joinCode}
-              onChange={handleJoinCodeChange}
-            />
-
-            <button>
-              Join space →
-            </button>
-
-          </div>
+        {joinMessage && ( <p>{joinMessage}</p>)}
+</div>
 
 
           <div className="space-option">
